@@ -21,17 +21,17 @@ def get_elbow_value(array, n_steps=1e6, plot=True):
     th_locs = np.diff(cum_prop)>=increase_th
     # if there is not just 1 "elbow"
     if np.diff(th_locs).sum()!= 1:
-        return get_cutoff_value(array, n_steps=n_steps*(1-1e-2), plot=plot)
+        return get_elbow_value(array, n_steps=n_steps*(1-1e-2), plot=plot)
     else:    
         cutoff_index = np.argmin(th_locs)
-        cutoff_value = value_steps[cutoff_index]
+        elbow_value = value_steps[cutoff_index]
     
     if plot:
         fig, ax = plt.subplots(1,1,dpi=100, figsize=(6,6))
         x=value_steps
         y=cum_prop
         ax.plot(x,y)
-        cutoff_x = cutoff_value
+        cutoff_x = elbow_value
         cutoff_y = cum_prop[cutoff_index]
         xmin, xmax = ax.get_xlim()
         ymin, ymax = ax.get_ylim()
@@ -45,4 +45,4 @@ def get_elbow_value(array, n_steps=1e6, plot=True):
         plt.grid(alpha=0.2)
         plt.show()
         
-    return cutoff_value
+    return elbow_value
