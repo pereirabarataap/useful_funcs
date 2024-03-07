@@ -1,7 +1,132 @@
-import numpy as np
-from matplotlib import pyplot as plt
+def plot_corr_df(corr_df, file_name=None, show=True):
+    """
+    corr_df must be a pandas.DataFrame().corr() object
+    """
+    import numpy as np
+    import pandas as pd
+    import plotly.graph_objects as go
+    import plotly.figure_factory as ff
+    from scipy.cluster.hierarchy import linkage
+
+    labels = corr_df.columns
+
+    # Initialize figure by creating upper dendrogram
+    fig = ff.create_dendrogram(
+        corr_df.values, 
+        labels=labels,
+        orientation='bottom', 
+        linkagefun=lambda x: linkage(
+            x, method="ward",optimal_ordering=True
+        )
+    )
+    for i in range(len(fig['data'])):
+        fig['data'][i]['yaxis'] = 'y2'
+
+    # Create Side Dendrogram
+    dendro_side = ff.create_dendrogram(
+        corr_df.values, 
+        labels=labels,
+        orientation='right',
+        linkagefun=lambda x: linkage(
+            x, method="ward",optimal_ordering=True
+        )
+    )
+    for i in range(len(dendro_side['data'])):
+        dendro_side['data'][i]['xaxis'] = 'x2'
+
+    # Add Side Dendrogram Data to Figure
+    for data in dendro_side['data']:
+        fig.add_trace(data)
+
+    # Create Heatmap
+    dendro_leaves = dendro_side['layout']['yaxis']['ticktext']
+    # dendro_leaves = list(map(int, dendro_leaves))
+
+    heatmap = [
+        go.Heatmap(
+            x = dendro_leaves,
+            y = dendro_leaves,
+            z = corr_df.loc[dendro_leaves, dendro_leaves],
+            colorscale = 'tempo'
+        )
+    ]
+
+    heatmap[0]['x'] = fig['layout']['xaxis']['tickvals']
+    heatmap[0]['y'] = fig['layout']['xaxis']['tickvals'] #dendro_side['layout']['yaxis']['tickvals']
+
+    # Add Heatmap Data to Figure
+    for data in heatmap:
+        fig.add_trace(data)
+
+    # Edit Layout
+    fig.update_layout(
+        {
+            "autosize": True,
+            'width': 1000, 
+            'height': 1000,
+            'showlegend':False, 
+            'hovermode': 'closest',
+        }
+    )
+
+    # Edit xaxis
+    fig.update_layout(xaxis={
+        'domain': [.15, 1],
+        'mirror': False,
+        'showgrid': False,
+        'showline': False,
+        'zeroline': False,
+        'ticktext': dendro_leaves,
+        'ticks':"",
+    })
+
+    # Edit yaxis
+    fig.update_layout(yaxis={
+        'domain': [0, .85],
+        'mirror': False,
+        'showgrid': False,
+        'showline': False,
+        'zeroline': False,
+        'showticklabels': False,
+        'ticks': "",
+        'ticktext': dendro_leaves,
+        'tickvals': np.array(range(len(labels))) * 10 + 5
+    })
+
+    # Edit xaxis2
+    fig.update_layout(xaxis2={
+        'domain': [0, .15],
+        'mirror': False,
+        'showgrid': False,
+        'showline': False,
+        'zeroline': False,
+        'showticklabels': False,
+        'ticks':""
+    })
+
+
+    # Edit yaxis2
+    fig.update_layout(yaxis2={
+        'domain':[.825, 0.975],
+        'mirror': False,
+        'showgrid': False,
+        'showline': False,
+        'zeroline': False,
+        'showticklabels': False,
+        'ticks':""
+    })
+    
+    if file_name:
+        fig.write_html(file_name)
+    
+    # Plot!
+    if show:
+        fig.show()
+
 
 def get_elbow_value(array, n_steps=1e6, plot=True):
+    import numpy as np
+    from matplotlib import pyplot as plt
     """
     Function that returns the optimal cutoff value (elbow in cum_prop)
     array: array or list
