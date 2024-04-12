@@ -7,7 +7,7 @@ def get_values_to_keep_from_value_counts(value_counts, plot=False):
     values_to_keep = values[:index_to_keep]
     
     if plot:
-        fig, ax = plt.subplots(1,1, dpi=150, figsize=(4,4))    
+        fig, ax = plt.subplots(1,1, dpi=500, figsize=(len(values)//10,len(values)//10))    
         ax.plot(
             [""] + values.tolist(), 
             np.cumsum([0] + counts.tolist())
@@ -27,13 +27,13 @@ def get_values_to_keep_from_value_counts(value_counts, plot=False):
         ax.set_yticks(
             ticks=np.round(np.linspace(ytick_min, ytick_max, len(values)+1)), 
             labels=np.round(np.linspace(0, 1, len(values)+1), 2).astype(float), 
-            size=7
+            size=5
         )
         ax.set_xticks(
             ticks=range(len(values)+1),
             labels=[""] + values.tolist(),
             ha="center",
-            fontsize=7,
+            fontsize=5,
             rotation=90,
         )
         ax.tick_params(axis='x', which='major', pad=1)
