@@ -1,3 +1,46 @@
+def get_values_to_keep_from_value_counts(value_counts, plot=False):
+    values = value_counts.keys()
+    counts = value_counts.values.astype(int)
+    count_p = counts / sum(counts)
+    min_p_increase = 1/len(values)
+    index_to_keep = np.argmin(abs(count_p - min_p_increase))
+    values_to_keep = values[:index_to_keep]
+    
+    if plot:
+        fig, ax = plt.subplots(1,1, dpi=150, figsize=(4,4))    
+        ax.plot(
+            [""] + values.tolist(), 
+            np.cumsum([0] + counts.tolist())
+        )
+        ax.scatter(
+            [index_to_keep],
+            [np.cumsum(counts.tolist())[index_to_keep-1]],
+            c="C1",
+            edgecolor="k"
+        )
+        ax.grid(alpha=0.5)
+        ax.set_xlabel("Values")
+        ytick_min = 0
+        ytick_max = sum(counts)
+        ax.set_ylabel("Proportion of samples retained")
+        plt.title(f"{value_counts.index.name} values to keep based on proportion of samples retained")
+        ax.set_yticks(
+            ticks=np.round(np.linspace(ytick_min, ytick_max, len(values)+1)), 
+            labels=np.round(np.linspace(0, 1, len(values)+1), 2).astype(float), 
+            size=7
+        )
+        ax.set_xticks(
+            ticks=range(len(values)+1),
+            labels=[""] + values.tolist(),
+            ha="center",
+            fontsize=7,
+            rotation=90,
+        )
+        ax.tick_params(axis='x', which='major', pad=1)
+        plt.show()
+    
+    return values_to_keep
+
 def plot_corr_df(corr_df, file_name=None, show=True):
     """
     corr_df must be a pandas.DataFrame().corr() object
