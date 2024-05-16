@@ -1,3 +1,74 @@
+class MissIndicator():
+
+    import copy
+    import numpy as np
+    from sklearn.impute import MissingIndicator
+    
+    def __init__(self):
+        self.is_fit = False
+        
+    def fit(self, X, y=None):
+        self.mi = MissingIndicator(sparse=False, error_on_new=False)
+        self.mi.fit(X)
+        self.is_fit = True
+        
+    def transform(self, X, y=None):
+        return np.concatenate([copy.deepcopy(X), self.mi.transform(X)], axis=1)
+    
+    def fit_transform(self, X, y=None):
+        self.mi = MissingIndicator(sparse=False, error_on_new=False)
+        self.mi.fit(X)
+        self.is_fit = True
+        return np.concatenate([copy.deepcopy(X), self.mi.transform(X)], axis=1)
+    
+class Clamper():
+
+    import copy
+    import numpy as np
+    
+    def __init__(self):
+        self.is_fit = False
+        self.values_to_keep = {}
+        
+    def _get_values_to_keep_from_value_counts(self, value_counts):
+        values = value_counts.keys()
+        counts = value_counts.values.astype(int)
+        count_p = counts / sum(counts)
+        min_p_increase = 1/len(values)
+        index_to_keep = np.argmin(abs(count_p - min_p_increase))
+        values_to_keep = values[:index_to_keep]
+        return values_to_keep
+    
+    def fit_transform(self, X, y=None):
+        transformed_X = copy.deepcopy(X)
+        for column in X.columns:
+            self.values_to_keep[column] = self._get_values_to_keep_from_value_counts(
+                X[column].value_counts()
+            )
+            transformed_X.loc[
+                ~(transformed_X[column].isin(self.values_to_keep[column])),
+                column
+            ] = "other"
+        self.is_fit = True
+        return transformed_X
+    
+    def fit(self, X, y=None):
+        for column in X.columns:
+            self.values_to_keep[column] = self._get_values_to_keep_from_value_counts(
+                X[column].value_counts()
+            )
+        self.is_fit = True
+        
+    def transform(self, X, y=None):
+        transformed_X = copy.deepcopy(X)
+        for column in X.columns:
+            transformed_X.loc[
+                ~(transformed_X[column].isin(self.values_to_keep[column])),
+                column
+            ] = "other"
+        
+        return transformed_X
+
 def get_values_to_keep_from_value_counts(value_counts, plot=False):
     values = value_counts.keys()
     counts = value_counts.values.astype(int)
