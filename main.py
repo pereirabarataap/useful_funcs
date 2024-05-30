@@ -1,3 +1,47 @@
+def make_distribution(
+    size:int=100, 
+    distribution_type:str="normal",  
+    distribution_uniform_factor:float=0.5
+):
+    """
+    Function which generates a distribution from which agents sample their random attributes
+    
+    Input:
+        size: int -> [1, inf)
+            number of variables/features to consider
+        distribution_type: str -> {"normal", "powerlaw"}
+            distribution shape to follow
+        distribution_uniform_factor: float -> [0,1]
+            how uniform the shape of the distribution should be, with 1 being completely uniform
+    
+    Output:
+        numpy array of length 'size' of non-zero positive values which sum to 1
+    """
+    import numpy as np
+    from scipy.stats import powerlaw, norm
+    from sklearn.preprocessing import MinMaxScaler
+    
+    if distribution_type=="powerlaw":
+        scaler = MinMaxScaler(feature_range=(0.1,1))
+        power_uniform_factor = scaler.fit_transform(
+            np.array([0, distribution_uniform_factor, 1]).reshape(-1,1)
+        ).ravel()[1]
+        materials_distribution = powerlaw.pdf(
+            x=np.linspace(0,1, num=size+1)[1:],
+            a=power_uniform_factor,
+        )
+
+    elif distribution_type=="normal":
+        scaler = MinMaxScaler(feature_range=(-3,0))
+        norm_uniform_factor = scaler.fit_transform(
+            np.array([0, distribution_uniform_factor, 1]).reshape(-1,1)
+        ).ravel()[1]
+        materials_distribution = np.sort(norm.pdf(
+            x=np.linspace(-norm_uniform_factor,norm_uniform_factor, num=size)
+        ))[::-1]
+
+    return materials_distribution / materials_distribution.sum()
+
 class MissIndicator():
 
     import copy
