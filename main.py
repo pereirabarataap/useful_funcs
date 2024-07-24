@@ -1,3 +1,93 @@
+def process_all_batches(batches):
+    """
+    Process all batches of items in parallel, updating a progress bar.
+
+    Parameters:
+    batches (list of lists): A list where each element is a batch (list) of items to be processed.
+
+    Returns:
+    list of lists: A list where each element corresponds to the processed results of the respective batch in the input.
+    """
+
+    from joblib import Parallel, delayed
+    from tqdm.notebook import tqdm
+    import time
+    import threading
+    import multiprocessing
+
+    # Define a sample function that simulates some processing
+    # Users should replace this function with their own processing logic
+    def process_item(item, progress_list, index):
+        """
+        Simulate processing of an item.
+
+        Parameters:
+        item: The item to be processed.
+        progress_list (list): A shared list to track progress.
+        index (int): The index of the current batch.
+
+        Returns:
+        The processed item (for demonstration, item * 2).
+        """
+        time.sleep(1)  # Simulate a delay
+        progress_list[index] += 1  # Update progress
+        return item * 2
+
+    # Define the function that processes a batch
+    def process_batch(batch, progress_list, index):
+        """
+        Process a batch of items.
+
+        Parameters:
+        batch (list): The batch of items to be processed.
+        progress_list (list): A shared list to track progress.
+        index (int): The index of the current batch.
+
+        Returns:
+        list: The processed items in the batch.
+        """
+        results = [process_item(item, progress_list, index) for item in batch]
+        return results
+
+    # Define the function to update the progress bar
+    def update_progress_bar(pbar, total_items, progress_list):
+        """
+        Update the progress bar based on the processing progress.
+
+        Parameters:
+        pbar (tqdm): The progress bar object.
+        total_items (int): The total number of items to be processed.
+        progress_list (list): A shared list to track progress.
+        """
+        while pbar.n < total_items:
+            time.sleep(0.1)  # Refresh interval
+            completed = sum(progress_list)  # Total completed items
+            pbar.n = completed  # Update progress bar
+            pbar.refresh()
+        pbar.close()
+
+    total_items = sum(len(batch) for batch in batches)  # Total number of items to process
+    manager = multiprocessing.Manager()
+    progress_list = manager.list([0] * len(batches))  # Shared list to track progress for each batch
+
+    # Create the progress bar
+    pbar = tqdm(total=total_items, position=0, leave=True)
+
+    # Start the progress bar update thread
+    progress_thread = threading.Thread(target=update_progress_bar, args=(pbar, total_items, progress_list))
+    progress_thread.start()
+
+    # Process each batch in parallel
+    results = Parallel(n_jobs=-1)(
+        delayed(process_batch)(batch, progress_list, i) for i, batch in enumerate(batches)
+    )
+
+    # Wait for the progress thread to finish
+    progress_thread.join()
+
+    return results
+    
+
 def make_distribution(
     size:int=100, 
     distribution_type:str="normal",  
